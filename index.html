@@ -28,8 +28,74 @@
       </div>
   </main>
 
-  <script>
+ <script>
+    // Load a question when page loads
+    $(document).ready(function () {
+      loadQuestion();
+    });
 
+    // Fetch a batch of 10 questions and store them
+    function fetchQuestions() {
+      return axios
+        .get("https://opentdb.com/api.php?amount=10&type=boolean")
+        .then((res) => {
+          const questions = res.data.results;
+          localStorage.setItem("triviaQuestions", JSON.stringify(questions));
+        });
+    }
+
+    // Load a single question
+    function loadQuestion() {
+      let stored = localStorage.getItem("triviaQuestions");
+
+      // If no stored questions → fetch new batch
+      if (!stored) {
+        fetchQuestions().then(loadQuestion);
+        return;
+      }
+
+      let questions = JSON.parse(stored);
+
+      // If empty → fetch new batch
+      if (questions.length === 0) {
+        localStorage.removeItem("triviaQuestions");
+        fetchQuestions().then(loadQuestion);
+        return;
+      }
+
+      // Remove one question from the array
+      const q = questions.shift();
+
+      // Save remaining
+      localStorage.setItem("triviaQuestions", JSON.stringify(questions));
+
+      // Save correct answer in sessionStorage
+      sessionStorage.setItem("correctAnswer", q.correct_answer);
+
+      // Display the question text
+      $("#question").html(q.question);
+    }
+
+    // Compare user choice to sessionStorage answer
+    function checkAnswer(userAnswer) {
+      const correct = sessionStorage.getItem("correctAnswer");
+
+      if (userAnswer === correct) {
+        alert("Correct!");
+        loadQuestion();
+      } else {
+        alert("Try again");
+      }
+    }
+
+    // Button handlers
+    $("#trueBtn").click(function () {
+      checkAnswer("True");
+    });
+
+    $("#falseBtn").click(function () {
+      checkAnswer("False");
+    });
   </script>
 </body>
 </html>
